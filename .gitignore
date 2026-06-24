@@ -1,0 +1,64 @@
+# =========================
+# Dataset
+# =========================
+dataset/
+
+# =========================
+# Trained Models
+# =========================
+trained_models/
+*.h5
+*.keras
+*.pth
+*.pt
+*.onnx
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.venv/
+venv/
+env/
+
+.ipynb_checkpoints/
+
+# =========================
+# FastAPI Logs
+# =========================
+*.log
+
+# =========================
+# React / Bun
+# =========================
+node_modules/
+
+# Bun
+.bun/
+
+# Build folders
+dist/
+build/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.development
+.env.production
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# VS Code
+# =========================
+.vscode/settings.json
