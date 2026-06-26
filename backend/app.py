@@ -5,13 +5,19 @@ import traceback
 from PIL import Image
 import numpy as np
 import cv2
+import os
+from dotenv import load_dotenv
 
 app = FastAPI(title="Facial Expression Recognition API")
+load_dotenv()
 
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+MODEL_PATH = os.getenv("MODEL_PATH")
+CASCADE_PATH = os.getenv("CASCADE_PATH")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
+        FRONTEND_URL,
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -19,11 +25,11 @@ app.add_middleware(
 )
 
 # Load model
-model = load_model("models/fer_model.keras")
+model = load_model(MODEL_PATH)
 
 # Load Haar Cascade
 face_cascade = cv2.CascadeClassifier(
-    "assets/haarcascade_frontalface_default.xml"
+    CASCADE_PATH
 )
 
 emotion_labels = [
