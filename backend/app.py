@@ -1,10 +1,22 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from tensorflow.keras.models import load_model
+import traceback
 from PIL import Image
 import numpy as np
 import cv2
 
 app = FastAPI(title="Facial Expression Recognition API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load model
 model = load_model("models/fer_model.keras")
@@ -52,10 +64,15 @@ async def predict(file: UploadFile = File(...)):
         )
 
         if len(faces) == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="No face detected in the uploaded image."
-            )
+                return {
+            "success": False,
+            "emotion": None,
+            "confidence": 0,
+            "face": None,
+            "image_width": int(image.shape[1]),
+            "image_height": int(image.shape[0]),
+            "message": "No face detected"
+        }
 
         # Largest face
         faces = sorted(
@@ -82,11 +99,21 @@ async def predict(file: UploadFile = File(...)):
         confidence = float(np.max(prediction) * 100)
 
         return {
+            "success": True,
             "emotion": emotion_labels[emotion_index],
-            "confidence": round(confidence, 2)
+            "confidence": round(confidence, 2),
+            "face": {
+                "x": int(x),
+                "y": int(y),
+                "w": int(w),
+                "h": int(h)
+            },
+            "image_width": int(image.shape[1]),
+            "image_height": int(image.shape[0])
         }
 
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=str(e)
