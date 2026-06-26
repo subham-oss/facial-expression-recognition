@@ -8,7 +8,6 @@ dataset/
 # =========================
 trained_models/
 *.h5
-*.keras
 *.pth
 *.pt
 *.onnx
