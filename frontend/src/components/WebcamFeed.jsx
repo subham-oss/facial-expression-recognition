@@ -6,37 +6,17 @@ const WebcamFeed = ({ setPrediction }) => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
 
-  const capture = async () => {
-    if (!webcamRef.current) return;
-
-    const imageSrc = webcamRef.current.getScreenshot();
-
-    if (!imageSrc) return;
-
-    const blob = await fetch(imageSrc).then((r) => r.blob());
-
-    const formData = new FormData();
-    formData.append("file", blob, "frame.jpg");
-
-    try {
-      const res = await api.post("/predict", formData);
-
-      setPrediction(res.data);
-
-      drawFace(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // Prevent multiple requests running simultaneously
+  const isPredicting = useRef(false);
 
   const drawFace = (data) => {
     const canvas = canvasRef.current;
 
     if (!canvas) return;
 
-    const video = webcamRef.current.video;
+    const video = webcamRef.current?.video;
 
-    if (!video) return;
+    if (!video || video.videoWidth === 0) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -56,37 +36,81 @@ const WebcamFeed = ({ setPrediction }) => {
     const h = data.face.h * scaleY;
 
     ctx.strokeStyle = "#00ff00";
-    ctx.lineWidth = 4;
-
+    ctx.lineWidth = 3;
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = "#00ff00";
-    ctx.font = "22px Arial";
+    ctx.font = "18px Arial";
 
     ctx.fillText(
       `${data.emotion} (${data.confidence}%)`,
       x,
-      y - 10
+      Math.max(20, y - 8)
     );
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      capture();
-    }, 300);
+  const capture = async () => {
+    if (isPredicting.current) return;
 
-    return () => clearInterval(interval);
+    if (!webcamRef.current) return;
+
+    const imageSrc = webcamRef.current.getScreenshot();
+
+    if (!imageSrc) return;
+
+    isPredicting.current = true;
+
+    try {
+      const blob = await fetch(imageSrc).then((r) => r.blob());
+
+      const formData = new FormData();
+      formData.append("file", blob, "frame.jpg");
+
+      const res = await api.post("/predict", formData);
+
+      setPrediction(res.data);
+
+      drawFace(res.data);
+    } catch (err) {
+      console.error("Prediction Error:", err);
+    } finally {
+      isPredicting.current = false;
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loop = async () => {
+      while (!cancelled) {
+        await capture();
+
+        // Small delay before next prediction
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    };
+
+    loop();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
     <div className="bg-slate-800 rounded-xl p-5">
-
       <div className="relative">
-
         <Webcam
           ref={webcamRef}
           audio={false}
+          mirrored
           screenshotFormat="image/jpeg"
+          screenshotQuality={0.7}
+          videoConstraints={{
+            width: 320,
+            height: 240,
+            facingMode: "user",
+          }}
           className="rounded-lg w-full"
         />
 
@@ -94,9 +118,7 @@ const WebcamFeed = ({ setPrediction }) => {
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
         />
-
       </div>
-
     </div>
   );
 };

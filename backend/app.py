@@ -1,35 +1,27 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from tensorflow.keras.models import load_model
-import traceback
-from PIL import Image
 import numpy as np
 import cv2
 import os
+import traceback
+import time
 from dotenv import load_dotenv
 
-app = FastAPI(title="Facial Expression Recognition API")
 load_dotenv()
+
+app = FastAPI(title="Facial Expression Recognition API")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 MODEL_PATH = os.getenv("MODEL_PATH")
 CASCADE_PATH = os.getenv("CASCADE_PATH")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        FRONTEND_URL,
-    ],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
-
-# Load model
-model = load_model(MODEL_PATH)
-
-# Load Haar Cascade
-face_cascade = cv2.CascadeClassifier(
-    CASCADE_PATH
 )
 
 emotion_labels = [
@@ -42,6 +34,25 @@ emotion_labels = [
     "surprise"
 ]
 
+model = None
+face_cascade = None
+
+
+@app.on_event("startup")
+def startup():
+    global model, face_cascade
+
+    print("Loading model...")
+    model = load_model(MODEL_PATH)
+
+    print("Loading Haar Cascade...")
+    face_cascade = cv2.CascadeClassifier(CASCADE_PATH)
+
+    if face_cascade.empty():
+        raise RuntimeError("Failed to load Haar Cascade.")
+
+    print("Backend ready.")
+
 
 @app.get("/")
 def home():
@@ -50,59 +61,89 @@ def home():
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    total_start = time.perf_counter()
+
     try:
-        # Read image
-        image = Image.open(file.file).convert("RGB")
+        # Validate image
+        if not file.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=400,
+                detail="Uploaded file must be an image."
+            )
 
-        # Convert to OpenCV format
-        image = np.array(image)
+        # -----------------------------
+        # Decode image (faster than PIL)
+        # -----------------------------
+        decode_start = time.perf_counter()
 
-        # RGB -> BGR
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        contents = await file.read()
+
+        np_img = np.frombuffer(contents, np.uint8)
+
+        image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+
+        if image is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid image."
+            )
 
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # Detect face
+        print(f"Decode Time: {time.perf_counter()-decode_start:.3f}s")
+
+        # -----------------------------
+        # Face Detection
+        # -----------------------------
+        detect_start = time.perf_counter()
+
         faces = face_cascade.detectMultiScale(
             gray,
-            scaleFactor=1.3,
-            minNeighbors=5
+            scaleFactor=1.2,
+            minNeighbors=5,
+            minSize=(60, 60)
         )
+
+        print(f"Face Detection: {time.perf_counter()-detect_start:.3f}s")
 
         if len(faces) == 0:
-                return {
-            "success": False,
-            "emotion": None,
-            "confidence": 0,
-            "face": None,
-            "image_width": int(image.shape[1]),
-            "image_height": int(image.shape[0]),
-            "message": "No face detected"
-        }
+            return {
+                "success": False,
+                "emotion": None,
+                "confidence": 0,
+                "face": None,
+                "image_width": int(image.shape[1]),
+                "image_height": int(image.shape[0]),
+                "message": "No face detected"
+            }
 
-        # Largest face
-        faces = sorted(
-            faces,
-            key=lambda f: f[2] * f[3],
-            reverse=True
-        )
+        x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
 
-        x, y, w, h = faces[0]
+        # -----------------------------
+        # Preprocessing
+        # -----------------------------
+        preprocess_start = time.perf_counter()
 
         face = gray[y:y+h, x:x+w]
-
         face = cv2.resize(face, (48, 48))
+        face = face.astype(np.float32) / 255.0
+        face = np.expand_dims(face, axis=(0, -1))
 
-        face = face.astype("float32") / 255.0
+        print(f"Preprocessing: {time.perf_counter()-preprocess_start:.3f}s")
 
-        face = np.expand_dims(face, axis=-1)
-        face = np.expand_dims(face, axis=0)
+        # -----------------------------
+        # Prediction
+        # -----------------------------
+        predict_start = time.perf_counter()
 
         prediction = model.predict(face, verbose=0)
 
-        emotion_index = np.argmax(prediction)
+        print(f"Prediction: {time.perf_counter()-predict_start:.3f}s")
 
+        emotion_index = int(np.argmax(prediction))
         confidence = float(np.max(prediction) * 100)
+
+        print(f"Total Time: {time.perf_counter()-total_start:.3f}s")
 
         return {
             "success": True,
@@ -117,6 +158,9 @@ async def predict(file: UploadFile = File(...)):
             "image_width": int(image.shape[1]),
             "image_height": int(image.shape[0])
         }
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         traceback.print_exc()
