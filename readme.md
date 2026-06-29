@@ -39,38 +39,6 @@ Webcam → OpenCV Face Detection → CNN Model → FastAPI Backend → React Fro
 - OpenCV (Computer Vision)  
 - FER-2013 Dataset  
 
-## Project Structure
-facial-expression-recognition/
-├── backend/
-│   ├── main.py
-│   ├── model/
-│   │   └── fer_model.h5
-│   ├── utils/
-│   │   └── face_detection.py
-│   ├── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── WebcamFeed.jsx
-│   │   │   ├── EmotionCard.jsx
-│   │   │   └── Navbar.jsx
-│   │   ├── pages/
-│   │   │   └── Home.jsx
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── package.json
-│
-├── training/
-│   └── train_model.ipynb
-│
-├── screenshots/
-│   ├── home.png
-│   ├── webcam.png
-│   └── result.png
-│
-└── README.md
-
 ## Installation
 
 ### Clone Repository
@@ -100,12 +68,7 @@ Response:
   "emotion": "Happy",
   "confidence": 0.92
 }
-
-## Screenshots
-![Home Page](screenshots/home.png)  
-![Webcam Detection](screenshots/webcam.png)  
-![Result](screenshots/result.png)  
-
+  
 ## Model Details
 CNN trained on FER-2013 dataset  
 7 emotion classes  
