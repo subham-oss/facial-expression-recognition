@@ -42,7 +42,7 @@ Webcam → OpenCV Face Detection → CNN Model → FastAPI Backend → React Fro
 ## Installation
 
 ### Clone Repository
-git clone https://github.com/your-username/facial-expression-recognition.git  
+git clone https://github.com/subham-oss/facial-expression-recognition.git
 cd facial-expression-recognition  
 
 ### Backend Setup
@@ -55,8 +55,8 @@ Docs: http://127.0.0.1:8000/docs
 
 ### Frontend Setup
 cd frontend  
-npm install  
-npm run dev  
+bun install  
+bun run dev  
 
 Frontend: http://localhost:5173  
 
