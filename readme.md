@@ -9,9 +9,19 @@
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen.svg)
 
 ## Abstract
-Facial Expression Recognition (FER) is a deep learning-based computer vision system designed to detect and classify human emotions from real-time facial images. This project uses a CNN model trained on the FER-2013 dataset and integrates FastAPI backend with React frontend for live emotion prediction.
+Here are a few improved versions you can use, depending on the style you want:
 
-Emotions: Angry, Disgust, Fear, Happy, Sad, Surprise, Neutral
+
+Facial Expression Recognition (FER) is a deep learning-based computer vision application that detects and classifies human emotions from real-time facial images. The system employs a Convolutional Neural Network (CNN) trained on the FER-2013 dataset and integrates a FastAPI backend with a React frontend to provide real-time emotion prediction. It recognizes seven facial expressions: **Angry, Disgust, Fear, Happy, Sad, Surprise,** and **Neutral**.
+
+
+Developed a **Facial Expression Recognition (FER)** system using deep learning to identify human emotions from real-time facial images. The application utilizes a **CNN model** trained on the **FER-2013 dataset**, with a **FastAPI** backend and **React** frontend for seamless live emotion detection. The model classifies seven emotions: **Angry, Disgust, Fear, Happy, Sad, Surprise,** and **Neutral**.
+
+
+Facial Expression Recognition (FER) is an AI-powered web application that performs real-time emotion recognition using computer vision and deep learning. The project leverages a **Convolutional Neural Network (CNN)** trained on the **FER-2013 dataset** to accurately classify facial expressions. Built with a **FastAPI** backend and a **React** frontend, the application provides live emotion predictions for seven categories: **Angry, Disgust, Fear, Happy, Sad, Surprise,** and **Neutral**.
+
+This version is suitable for project documentation, GitHub, and portfolio presentations.
+
 
 ## Objectives
 - Real-time emotion detection system  
